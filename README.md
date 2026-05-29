@@ -1,5 +1,16 @@
 # Zenpower5
 
+This is a fork of [mattkeenan/zenpower5](https://github.com/mattkeenan/zenpower5) with (crudely) added support for Ryzen 7900x (Family 19h, Model 61h).
+
+What works:
+- `Tdie, Tctl, Tccd*`
+- Package power, using `RAPL`
+
+What does not work:
+- Voltage and current readings: Zen4 uses `SVI3`, not supported at the moment
+
+---
+
 Zenpower5 is a Linux kernel driver for reading temperature, voltage (SVI2), current (SVI2), and power (SVI2/RAPL) for AMD Zen family CPUs, with support for **Zen 1 through Zen 5** architectures.
 
 This is a structural update to the [zenpower3](https://github.com/AliEmreSenel/zenpower3) project, featuring a modernised multi-file backend architecture and expanded CPU support.
