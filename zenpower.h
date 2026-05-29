@@ -46,8 +46,9 @@ struct zenpower_data {
 	bool amps_visible;
 	bool ccd_visible[8];
 	bool no_rapl_core;
+	bool use_rapl;
 
-	/* RAPL power tracking (zen5 only) - [0]=package, [1]=core */
+	/* RAPL power tracking (zen4 / zen5 only) - [0]=package, [1]=core */
 	u64 rapl_prev_energy[2];
 	ktime_t rapl_prev_time[2];
 	bool rapl_available[2];

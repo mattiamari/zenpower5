@@ -275,7 +275,7 @@ static const struct zenpower_model_config model_configs[] = {
 	  .svi_soc_addr = F19H_M21H_SVI_TEL_PLANE1,
 	  .ccd_temp_base = F19H_M60H_CCD_TEMP_BASE,
 	  .num_ccds = 2,
-	  .flags = ZEN_CFG_ZEN2_CALC,
+	  .flags = ZEN_CFG_ZEN2_CALC | ZEN_CFG_RAPL,
 	  .name = "Zen4 Raphael (19h/61h)" },
 
 	/* Family 1Ah - Zen5 Granite Ridge (Desktop) */
@@ -327,15 +327,23 @@ static umode_t zenpower_is_visible(const void *rdata,
 			break;
 
 		case hwmon_power:
-			if (data->amps_visible == false)
-				return 0;
-			if (channel == 0 && data->svi_core_addr == 0)
-				return 0;
-			if (channel == 1 && data->svi_soc_addr == 0)
-				return 0;
-			/* Hide Core power if unavailable/meaningless (e.g., Strix Halo APU) */
-			if (data->no_rapl_core && channel == 1)
-				return 0;
+			if (data->use_rapl) {
+				/* RAPL: only package (channel 0); hide core channel */
+				if (channel == 1)
+					return 0;
+				if (!data->rapl_available[0])
+					return 0;
+			} else {
+				if (data->amps_visible == false)
+					return 0;
+				if (channel == 0 && data->svi_core_addr == 0)
+					return 0;
+				if (channel == 1 && data->svi_soc_addr == 0)
+					return 0;
+				/* Hide Core power if unavailable/meaningless (e.g., Strix Halo APU) */
+				if (data->no_rapl_core && channel == 1)
+					return 0;
+			}
 			break;
 
 		case hwmon_in:
@@ -443,8 +451,7 @@ static int zenpower_read(struct device *dev, enum hwmon_sensor_types type,
 				return -EOPNOTSUPP;
 			}
 
-			/* Zen5 uses RAPL for power monitoring (SVI3 not supported yet) */
-			if (type == hwmon_power && data->zen5) {
+			if (type == hwmon_power && data->use_rapl) {
 				return zenpower_rapl_read_power(data, channel, val);
 			}
 
@@ -620,7 +627,7 @@ static int zenpower_read_labels(struct device *dev,
 			break;
 		case hwmon_power:
 			data = dev_get_drvdata(dev);
-			if (data->zen5) {
+			if (data->use_rapl) {
 				*str = zenpower_power_label_zen5[i][channel];
 			} else {
 				*str = zenpower_power_label[i][channel];
@@ -811,11 +818,14 @@ static int zenpower_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 			data->no_rapl_core = true;
 		}
 
-		/* Handle Zen5 RAPL initialization */
+		/* Handle RAPL initialization */
 		if (config->flags & ZEN_CFG_RAPL) {
 			if (zenpower_rapl_init(data, dev)) {
 				dev_warn(dev, "RAPL initialization failed, power monitoring unavailable\n");
-				data->amps_visible = false;
+				if (data->zen5)
+					data->amps_visible = false;
+			} else {
+				data->use_rapl = true;
 			}
 		}
 
