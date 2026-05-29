@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 hwmon="/sys/class/hwmon"
 mdevs=`ls $hwmon`
