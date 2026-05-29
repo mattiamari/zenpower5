@@ -140,6 +140,8 @@ MODULE_PARM_DESC(zen1_calc, "Set to 1 to use ZEN1 calculation");
 
 /* CCD temperature base addresses for configuration table */
 #define F17H_M70H_CCD_TEMP_BASE             0x00059954
+/* ZEN4 Raphael desktop - CCD offset 0x308 */
+#define F19H_M60H_CCD_TEMP_BASE             (F17H_M01H_REPORTED_TEMP_CTRL + 0x308)
 #define F1AH_M70H_CCD_TEMP_BASE             0x00059b08
 
 #ifndef HWMON_CHANNEL_INFO
@@ -266,6 +268,15 @@ static const struct zenpower_model_config model_configs[] = {
 	  .num_ccds = 2,
 	  .flags = ZEN_CFG_ZEN2_CALC,
 	  .name = "Zen3 APU (19h/50h)" },
+
+	/* Family 19h - Zen4 Raphael (Desktop) */
+	{ .family = 0x19, .model = 0x61,
+	  .svi_core_addr = F19H_M21H_SVI_TEL_PLANE0,
+	  .svi_soc_addr = F19H_M21H_SVI_TEL_PLANE1,
+	  .ccd_temp_base = F19H_M60H_CCD_TEMP_BASE,
+	  .num_ccds = 2,
+	  .flags = ZEN_CFG_ZEN2_CALC,
+	  .name = "Zen4 Raphael (19h/61h)" },
 
 	/* Family 1Ah - Zen5 Granite Ridge (Desktop) */
 	{ .family = 0x1a, .model = 0x44,
