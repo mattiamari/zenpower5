@@ -40,6 +40,7 @@ struct zenpower_data {
 	u8 cpu_id;
 	u8 nodes_per_cpu;
 	int temp_offset;
+	u32 ccd_temp_base;
 	bool zen2;
 	bool zen5;
 	bool kernel_smn_support;

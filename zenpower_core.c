@@ -414,11 +414,7 @@ static int zenpower_read(struct device *dev, enum hwmon_sensor_types type,
 							*val = zenpower_temp_get_ctl(data);
 							break;
 						case 2 ... 9: // Tccd1-8
-							if (data->zen5) {
-								*val = zenpower_temp_get_ccd(data, F1AH_M70H_CCD_TEMP(channel-2));
-							} else {
-								*val = zenpower_temp_get_ccd(data, F17H_M70H_CCD_TEMP(channel-2));
-							}
+							*val = zenpower_temp_get_ccd(data, data->ccd_temp_base + ((channel-2) * 4));
 							break;
 						default:
 							return -EOPNOTSUPP;
@@ -813,6 +809,8 @@ static int zenpower_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 			data->zen5 = true;
 		}
 
+		data->ccd_temp_base = config->ccd_temp_base;
+
 		/* Set RAPL Core power availability flag */
 		if (config->flags & ZEN_CFG_NO_RAPL_CORE) {
 			data->no_rapl_core = true;
@@ -822,8 +820,7 @@ static int zenpower_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		if (config->flags & ZEN_CFG_RAPL) {
 			if (zenpower_rapl_init(data, dev)) {
 				dev_warn(dev, "RAPL initialization failed, power monitoring unavailable\n");
-				if (data->zen5)
-					data->amps_visible = false;
+				data->amps_visible = false;
 			} else {
 				data->use_rapl = true;
 			}
@@ -867,7 +864,7 @@ static int zenpower_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	}
 
 	for (i = 0; i < ccd_check; i++) {
-		u32 ccd_addr = data->zen5 ? F1AH_M70H_CCD_TEMP(i) : F17H_M70H_CCD_TEMP(i);
+		u32 ccd_addr = data->ccd_temp_base + (i * 4);
 		data->read_amdsmn_addr(pdev, data->node_id, ccd_addr, &val);
 		/* Check valid bit (BIT(11)) per k10temp driver */
 		if (val & BIT(11)) {
