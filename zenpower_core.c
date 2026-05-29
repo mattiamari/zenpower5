@@ -271,8 +271,8 @@ static const struct zenpower_model_config model_configs[] = {
 
 	/* Family 19h - Zen4 Raphael (Desktop) */
 	{ .family = 0x19, .model = 0x61,
-	  .svi_core_addr = F19H_M21H_SVI_TEL_PLANE0,
-	  .svi_soc_addr = F19H_M21H_SVI_TEL_PLANE1,
+	  .svi_core_addr = 0,
+	  .svi_soc_addr = 0,
 	  .ccd_temp_base = F19H_M60H_CCD_TEMP_BASE,
 	  .num_ccds = 2,
 	  .flags = ZEN_CFG_ZEN2_CALC | ZEN_CFG_RAPL,
@@ -748,6 +748,7 @@ static int zenpower_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	data->svi_core_addr = false;
 	data->svi_soc_addr = false;
 	data->amps_visible = false;
+	data->use_rapl = false;
 	data->no_rapl_core = false;
 	data->node_id = 0;
 	for (i = 0; i < 8; i++) {
@@ -820,10 +821,11 @@ static int zenpower_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		if (config->flags & ZEN_CFG_RAPL) {
 			if (zenpower_rapl_init(data, dev)) {
 				dev_warn(dev, "RAPL initialization failed, power monitoring unavailable\n");
-				data->amps_visible = false;
 			} else {
 				data->use_rapl = true;
 			}
+			/* SVI2 current is not valid on RAPL-based CPUs */
+			data->amps_visible = false;
 		}
 
 		/* Handle multinode configuration (Threadripper/EPYC) */
